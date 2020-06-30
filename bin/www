@@ -1,0 +1,101 @@
+/* --------------------------- Module dependencies -------------------------- */
+
+var app = require('../app');
+var debug = require('debug')('angular2-nodejs:server');
+var http = require('http');
+
+/* ------------- Get port from environment and store in Express. ------------ */
+
+var port = 3000;
+app.set('port', port);
+
+/* --------------------------- Create HTTP server --------------------------- */
+
+var server = http.createServer(app);
+
+/* --------------------------- connect the socket --------------------------- */
+
+var io = require('socket.io').listen(server);
+
+io.on('connection', (socket) => {
+
+  var origin = socket['handshake']['headers']['origin'];
+  console.log('new connection made by : ' + origin);
+
+  if (origin == "http://localhost:4200" || origin == "http://localhost:4201" || origin == "http://13.80.78.209:1051" || origin == "http://13.80.78.209:1052" ) {
+
+    socket.on('join', function (data) {
+      //Un utilsateur à rejoins la conversation
+      socket.join(data.room);
+      console.log(data.user + ' : has joined the room : ' + data.room);
+      socket.broadcast.to(data.room).emit('new user joined', {
+        user: data.user,
+        message: 'has joined this room.'
+      });
+    });
+
+    socket.on('leave', function (data) {
+      //Un utilsateur à quitte la conversation
+      console.log(data.user + 'left the room : ' + data.room);
+      socket.broadcast.to(data.room).emit('left room', {
+        user: data.user,
+        message: 'has left this room.'
+      });
+      socket.leave(data.room);
+    });
+
+    socket.on('message', function (data) {
+      //Un utilsateur à envoie un message dans une conversation
+      console.log(`User : ${data.user}, Room : ${data.room}, Message : ${data.message} , Type : ${data.type_message} `);
+      io.in(data.room).emit('new message', {
+        user: data.user,
+        message: data.message,
+        room: data.room,
+        if_socket_up : true,
+        type_message : data.type_message
+      });
+    })
+  }
+});
+
+/* ----------- Listen on provided port, on all network interfaces. ---------- */
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+/* -------------- Event listener for HTTP server "error" event. ------------- */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string' ?
+    'Pipe ' + port :
+    'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/* ------------ Event listener for HTTP server "listening" event. ----------- */
+
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string' ?
+    'pipe ' + addr :
+    'port ' + addr.port;
+  debug('Listening on ' + bind);
+}

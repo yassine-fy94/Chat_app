@@ -1,0 +1,187 @@
+<div class="progressSpinner" *ngIf="isLoading">
+    <p-progressSpinner></p-progressSpinner>
+</div>
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a [routerLink]="['/gestion/dashboard']">Accueil</a></li>
+        <li class="breadcrumb-item active"><a>Discussions</a></li>
+    </ol>
+</nav>
+
+<div class="row" id="chatList">
+    <!-- //* ======================== Section Left ======================== -->
+    <div [ngClass]="{'col-md-4': conv_open, 'col-md-12': !conv_open}">
+        <div class="people-list">
+
+            <!-- ------------------- Si c'est un utilisateur normal -------------------- -->
+
+            <div class="chat-header clearfix" *ngIf="!admin">
+                <div class="d-flex justify-content-between mb-3">
+                    <div>
+                        <div class="chat-with">Liste des utilisateurs</div>
+                        <div class="chat-num-messages">{{Users_Total}} Utilisateur<span *ngIf="Users_Total > 1">s</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="mr-2">
+                            <img class="img-projets" src="assets/images/customers.png" />
+                        </div>
+                        <div class="chat-with">Structures</div>
+                    </div>
+                </div>
+                <p-dropdown [options]="listStructures" filter="true" placeholder="Sélection de structure"
+                    (onChange)="GetListOfUsers()" [(ngModel)]="selectedStructure">
+                    <ng-template let-dataItem pTemplate="item">
+                        <div class="ui-helper-clearfix">
+                            {{dataItem.label}}
+                        </div>
+                    </ng-template>
+                </p-dropdown>
+            </div>
+
+            <!-- -------------------------- Si c'est un admin -------------------------- -->
+
+            <div class="chat-header clearfix" *ngIf="admin">
+                <div class="d-flex justify-content-between mb-3">
+                    <div class="chat-with pt-3">Liste des utilisateurs</div>
+                    <div class="mr-2">
+                        <img class="img-projets" src="assets/images/customers.png" />
+                    </div>
+                </div>
+            </div>
+            <div id="treechat">
+                <div class="mt-3">
+                    <h3 *ngIf="list_users.length < 1" class="text-center">Aucun Utilisateur</h3>
+                </div>
+                <div *ngFor="let user of list_users" id="{{user.id}}" class="box cursor"
+                    (click)="Open_Conversation(user)">
+                    <img src="{{user.avatar}}" alt="" class="avatar">
+                    <div>
+                        <div class="about">
+                            <div class="nameuser">{{user.prenom_user}} {{user.nom_user}}</div>
+                            <div class="role">
+                                <i class="fa fa-circle me"></i>
+                                {{user.description_role}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- //* ======================== Section Right ======================== -->
+    <div [ngClass]="{'col-md-8': true}" *ngIf="conv_open">
+        <div class="chat" *ngIf="showBoxSend">
+            <div class="chat-header clearfix">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <img [src]="image_participant" class="avatar" alt="avatar" />
+                        <div class="chat-about">
+                            <div class="chat-with">{{Participant}}</div>
+                            <div class="role">
+                                <i class="fa fa-circle online"></i>
+                                {{description_role}}
+                            </div>
+                            <div class="role">
+                                <i class="fa fa-circle me"></i> <a href="mailto: {{mail_user}}"> {{mail_user}}</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- //* liste messages -->
+            <div class="chat-history scroll_Style">
+
+                <div *ngIf="!ifConversation_messages">
+                    <p>Aucun message</p>
+                </div>
+
+                <ul class="list-msg" *ngIf="ifConversation_messages">
+                    <li class="clearfix" *ngFor="let Message of ListeMessages">
+
+                        <!-- //* C'est si moi l'expediteur de message -->
+                        <div *ngIf="Message.id_expediteur == mon_id">
+                            <div class="message-data align-right">
+                                <span
+                                    class="message-data-time">{{Message.date_creation | date : "dd/MM/y h:mm:ss"}}</span>
+                                &nbsp; &nbsp;
+                                <span class="message-data-name pr10">Moi</span> <i class="fa fa-circle me"></i>
+                            </div>
+                            <div class="message other-message float-right">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        {{Message.contenu_message}}
+                                    </div>
+                                    <div *ngIf="Message.type_message==1">
+                                        <i class="pi si pi-download addpadd"
+                                            (click)="DownloadFileMessage(Message.contenu_message)"
+                                            pTooltip="Télécharger" tooltipPosition="top"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- //* C'est si moi recepteur de message -->
+                        <div *ngIf="Message.id_expediteur != mon_id">
+                            <div class="message-data">
+                                <span class="message-data-name"><i class="fa fa-circle online"></i>
+                                    {{Participant}}</span>
+                                <span
+                                    class="message-data-time pr10">{{Message.date_creation | date : "dd/MM/y h:mm:ss"}}</span>
+                            </div>
+                            <div class="message my-message">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        {{Message.contenu_message}}
+                                    </div>
+                                    <div *ngIf="Message.type_message==1">
+                                        <i class="pi si pi-download addpadd"
+                                            (click)="DownloadFileMessage(Message.contenu_message)"
+                                            pTooltip="Télécharger" tooltipPosition="top"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                <div id="end_messages"></div>
+            </div>
+            <!-- //* End liste messages -->
+
+            <!-- //* send message -->
+            <div class="chat-message clearfix">
+                <form [formGroup]="FormSendMessage" (ngSubmit)="EnvoyerMessage(file.files)">
+                    <textarea [ngClass]="{'message-to-send':true,'red-border':error==1}" placeholder="Zone de message"
+                        formControlName="message" rows="2" (keyup.enter)="EnvoyerMessage(file.files)">
+                    </textarea>
+                    <div class="d-flex">
+                        <div class="mr-auto">
+                            <p-fileUpload [showUploadButton]=false [showCancelButton]=false
+                                accept=".png,.jpg,.jpeg,.xlsx,.pdf,.doc,.txt,.html,.xml,.json,.xls,.gif,.csv,.docx"
+                                maxFileSize="2000000" #file chooseLabel="Joindre">
+                            </p-fileUpload>
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-search" [disabled]="disabled_Send_msg">Envoyer</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <!-- //* End send message -->
+        </div>
+
+        <div class="chat chat-not-conversation" *ngIf="!showBoxSend">
+            <div class="chat-header clearfix">
+                <img src="assets/images/notfound.png" class="avatar" alt="avatar" />
+                <div class="chat-about">
+                    <div class="chat-with">Aucune conversation </div>
+                    <div class="chat-num-messages">Veuillez choisir une conversation </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
